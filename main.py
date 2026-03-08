@@ -1,129 +1,38 @@
 from kivy.app import App
-from kivy.lang import Builder
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.properties import StringProperty
-from Screens.db import DB  # <- keep as is
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
+from kivy.core.window import Window
+from kivy.utils import get_color_from_hex
 
-KV = r"""
-ScreenManager:
-    LoginScreen:
-    HomeScreen:
+class MindReaderPro(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = 'vertical'
+        self.padding = 20
+        self.spacing = 15
+        Window.clearcolor = get_color_from_hex('#121212')
 
-<LoginScreen>:
-    name: "login"
-    BoxLayout:
-        orientation: "vertical"
-        padding: 16
-        spacing: 10
+        self.add_widget(Label(text="Mind Reader Pro", font_size='32sp', bold=True, color=get_color_from_hex('#BB86FC')))
+        self.add_widget(Label(text="فكر في رقم بين 1 و 10", font_size='18sp', color=get_color_from_hex('#E0E0E0')))
 
-        Label:
-            text: "MyKivyApp"
-            font_size: "22sp"
-            size_hint_y: None
-            height: "40dp"
+        self.user_input = TextInput(hint_text="أدخل رقمك هنا...", multiline=False, size_hint_y=None, height='50dp')
+        self.add_widget(self.user_input)
 
-        TextInput:
-            id: user
-            hint_text: "Username"
-            multiline: False
+        self.btn = Button(text="اقرأ عقلي الآن", size_hint_y=None, height='60dp', background_color=get_color_from_hex('#03DAC6'))
+        self.btn.bind(on_press=self.read_mind)
+        self.add_widget(self.btn)
 
-        TextInput:
-            id: pwd
-            hint_text: "Password"
-            password: True
-            multiline: False
+        self.result_label = Label(text="", font_size='20sp', color=get_color_from_hex('#CF6679'))
+        self.add_widget(self.result_label)
+        self.add_widget(Label(text="Developed by Iheb Soltani Studio", font_size='12sp', color=get_color_from_hex('#757575')))
 
-        BoxLayout:
-            size_hint_y: None
-            height: "48dp"
-            spacing: 10
+    def read_mind(self, instance):
+        if self.user_input.text:
+            self.result_label.text = f"عقلك يقول أن الرقم هو: {self.user_input.text}!"
 
-            Button:
-                text: "Login"
-                on_release: root.login(user.text, pwd.text)
+class MindReaderApp(App):
+    def build(self): return MindReaderPro()
 
-            Button:
-                text: "Sign up"
-                on_release: root.signup(user.text, pwd.text)
-
-        Label:
-            id: msg
-            text: root.message
-            color: (1,0,0,1)
-
-<HomeScreen>:
-    name: "home"
-    BoxLayout:
-        orientation: "vertical"
-        padding: 12
-        spacing: 8
-
-        Label:
-            text: "Welcome, " + root.username
-            size_hint_y: None
-            height: "32dp"
-
-        TextInput:
-            id: note
-            hint_text: "Write a note"
-            size_hint_y: None
-            height: "100dp"
-
-        Button:
-            text: "Add Note"
-            size_hint_y: None
-            height: "44dp"
-            on_release: root.add_note(note.text); note.text = ""
-
-        ScrollView:
-            GridLayout:
-                id: notes_box
-                cols: 1
-                size_hint_y: None
-                height: self.minimum_height
-"""
-
-class LoginScreen(Screen):
-    message = StringProperty("")
-
-    def on_pre_enter(self):
-        DB.init()
-
-    def login(self, u, p):
-        if DB.check_login(u, p):
-            self.manager.get_screen("home").username = u
-            self.manager.current = "home"
-            self.message = ""
-        else:
-            self.message = "Invalid login"
-
-    def signup(self, u, p):
-        ok, msg = DB.create_user(u, p)
-        self.message = msg
-
-class HomeScreen(Screen):
-    username = StringProperty("")
-
-    def on_pre_enter(self):
-        self.load_notes()
-
-    def add_note(self, text):
-        if text.strip():
-            DB.add_note(self.username, text.strip())
-            self.load_notes()
-
-    def load_notes(self):
-        notes = DB.list_notes(self.username)
-        box = self.ids.notes_box
-        box.clear_widgets()
-        from kivy.uix.label import Label
-        for n in notes:
-            box.add_widget(Label(text=f"• {n}", size_hint_y=None, height="28dp"))
-
-class MyApp(App):
-    def build(self):
-        DB.init()
-        return Builder.load_string(KV)
-
-if __name__ == "__main__":
-    MyApp().run()
+if __name__ == "__main__": MindReaderApp().run()
